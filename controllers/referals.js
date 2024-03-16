@@ -86,15 +86,24 @@ const getUsers = async (req, res) => {
 
 const getReferralsByUserId = async (req, res) => {
   try {
-    const { userId, page, limit } = req.body; // Default page to 1 and limit to 10 if not provided
+    const { userId, page = 1, limit = 10 } = req.body;
+    console.log(userId)
     const skip = (page - 1) * limit;
+
+    const user = await User.findById(userId); // Assuming User is your user model
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
     const referrals = await Referral.find({ byWhom: userId }).skip(skip).limit(limit);
     const totalReferrals = await Referral.countDocuments({ byWhom: userId });
-    res.status(200).json({ referrals, totalReferrals });
+
+    res.status(200).json({ user, referrals, totalReferrals });
   } catch (error) {
     res.status(500).json({ error: 'Failed to get referrals' });
   }
 };
+
 
 
 const changeReferralStatus = async (req, res) => {
@@ -119,11 +128,74 @@ const changeReferralStatus = async (req, res) => {
   }
 };
 
+const editStatus = async (req, res) => {
+  const { courseEnrolled, userId } = req.body;
+  console.log(courseEnrolled, userId);
+
+  try {
+    // Convert "Yes" to true and "No" to false
+    const enrolled = courseEnrolled === 'Yes';
+    console.log(enrolled)
+    const user = await User.findOneAndUpdate(
+      { _id: userId },
+      { courseEnrolled: enrolled },
+      // { new: true } // To return the updated document
+    );
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    return res.status(200).json(user);
+  } catch (error) {
+    console.error('Error editing user status:', error);
+    return res.status(500).json({ message: 'Internal server error' });
+  }
+};
+
+
+const getUserById = async (req, res) => {
+  const { userId } = req.body;
+   console.log(userId)
+  try {
+    const user = await Referral.findById(userId);
+    console.log(user)
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    return res.status(200).json(user);
+  } catch (error) {
+    console.error('Error fetching user:', error);
+    return res.status(500).json({ error: 'Internal server error' });
+  }
+};
+const getUs = async (req, res) => {
+  const { userId } = req.body;
+   console.log(userId)
+  try {
+    const user = await User.findById(userId);
+    console.log(user)
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    return res.status(200).json(user);
+  } catch (error) {
+    console.error('Error fetching user:', error);
+    return res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
+
 
 module.exports = {
   getAllReferrals,
   createReferral,
   getUsers,
   getReferralsByUserId,
-  changeReferralStatus
+  changeReferralStatus,
+  editStatus,
+  getUserById,
+  getUs
 };
